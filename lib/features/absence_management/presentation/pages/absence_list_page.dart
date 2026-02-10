@@ -1,5 +1,6 @@
 import 'package:absence_manager_dashboard/app/constants/app_sizes.dart';
-import 'package:absence_manager_dashboard/core/theme/app_theme.dart';
+import 'package:absence_manager_dashboard/core/widgets/primary_gradient_header.dart';
+import 'package:absence_manager_dashboard/core/widgets/section_card.dart';
 import 'package:flutter/material.dart';
 
 class AbsenceListPage extends StatelessWidget {
@@ -10,53 +11,20 @@ class AbsenceListPage extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: <Widget>[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.paddingLG,
-              AppSizes.paddingXL,
-              AppSizes.paddingLG,
-              AppSizes.paddingLG,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: <Color>[AppTheme.primary, AppTheme.secondary],
-              ),
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(AppSizes.radiusLG),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Absence Manager',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall?.copyWith(color: Colors.white),
-                  ),
-                  const SizedBox(height: AppSizes.spaceSM),
-                  Text(
-                    'View, filter, and manage employee absences including vacations and sick leave',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const PrimaryGradientHeader(
+            title: 'Absence Manager',
+            subtitle:
+                'View, filter, and manage employee absences including vacations and sick leave',
           ),
-          const Expanded(
+          Expanded(
             child: Center(
-              child: Card(
-                elevation: AppSizes.elevation,
-                child: Padding(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                child: const Padding(
                   padding: EdgeInsets.all(AppSizes.paddingLG),
-                  child: Text('Absence list will appear here'),
+                  child: SectionCard(
+                    child: Text('Absence list will appear here'),
+                  ),
                 ),
               ),
             ),

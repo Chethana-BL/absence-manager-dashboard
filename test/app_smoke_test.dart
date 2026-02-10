@@ -1,4 +1,4 @@
-import 'package:absence_manager_dashboard/app.dart';
+import 'package:absence_manager_dashboard/app/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
