@@ -1,12 +1,57 @@
 import 'package:absence_manager_dashboard/app/constants/app_sizes.dart';
 import 'package:absence_manager_dashboard/core/widgets/primary_gradient_header.dart';
 import 'package:absence_manager_dashboard/core/widgets/section_card.dart';
+import 'package:absence_manager_dashboard/features/absence_management/data/datasources/absence_local_data_source.dart';
+import 'package:absence_manager_dashboard/features/absence_management/data/repositories/absence_repository_impl.dart';
+import 'package:absence_manager_dashboard/features/absence_management/domain/entities/member.dart';
+import 'package:absence_manager_dashboard/features/absence_management/presentation/view_models/absence_list_item_vm.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/absence_filter_bar.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/absence_table.dart';
 import 'package:flutter/material.dart';
 
-class AbsenceListPage extends StatelessWidget {
+class AbsenceListPage extends StatefulWidget {
   const AbsenceListPage({super.key});
+
+  @override
+  State<AbsenceListPage> createState() => _AbsenceListPageState();
+}
+
+class _AbsenceListPageState extends State<AbsenceListPage> {
+  late final Future<_AbsencePageData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    final repo = const AbsenceRepositoryImpl(
+      localDataSource: AbsenceLocalDataSourceImpl(),
+    );
+    _future = _load(repo);
+  }
+
+  Future<_AbsencePageData> _load(AbsenceRepositoryImpl repo) async {
+    final absences = await repo.getAbsences();
+    final members = await repo.getMembers();
+
+    final memberByUserId = <int, Member>{for (final m in members) m.userId: m};
+
+    final items = absences.map((a) {
+      final memberName = memberByUserId[a.userId]?.name ?? 'Unknown';
+      return AbsenceListItemVm(
+        employeeName: memberName,
+        type: a.type,
+        startDate: a.startDate,
+        endDate: a.endDate,
+        memberNote: a.memberNote,
+        admitterNote: a.admitterNote,
+        status: a.status,
+        daysCount: a.daysCount,
+      );
+    }).toList();
+
+    final pageItems = items.take(10).toList();
+
+    return _AbsencePageData(totalAbsences: items.length, pageItems: pageItems);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +70,29 @@ class AbsenceListPage extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 1200),
                   child: Padding(
                     padding: const EdgeInsets.all(AppSizes.paddingLG),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        SectionCard(
-                          padding: const EdgeInsets.all(AppSizes.paddingLG),
-                          child: Column(
+                    child: SectionCard(
+                      padding: const EdgeInsets.all(AppSizes.paddingLG),
+                      child: FutureBuilder<_AbsencePageData>(
+                        future: _future,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState !=
+                              ConnectionState.done) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(AppSizes.paddingLG),
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return const Center(
+                              child: Text('Failed to load data'),
+                            );
+                          }
+
+                          final data = snapshot.data!;
+                          return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
                               Row(
@@ -52,21 +114,15 @@ class AbsenceListPage extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: AppSizes.space),
-                              const Row(
-                                children: <Widget>[
-                                  // TODO: This should be dynamic based on the current filters and search query
-                                  _TotalAbsencesPill(total: 142),
-                                  Spacer(),
-                                ],
-                              ),
+                              _TotalAbsencesPill(total: data.totalAbsences),
                               const SizedBox(height: AppSizes.spaceLG),
                               const AbsenceFilterBar(),
                               const SizedBox(height: AppSizes.spaceLG),
-                              const AbsenceTable(),
+                              AbsenceTable(rows: data.pageItems),
                             ],
-                          ),
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -77,6 +133,17 @@ class AbsenceListPage extends StatelessWidget {
       ),
     );
   }
+}
+
+//
+class _AbsencePageData {
+  const _AbsencePageData({
+    required this.totalAbsences,
+    required this.pageItems,
+  });
+
+  final int totalAbsences;
+  final List<AbsenceListItemVm> pageItems;
 }
 
 class _TotalAbsencesPill extends StatelessWidget {
