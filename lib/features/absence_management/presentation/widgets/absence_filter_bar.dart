@@ -4,7 +4,16 @@ import 'package:absence_manager_dashboard/features/absence_management/domain/enu
 import 'package:flutter/material.dart';
 
 class AbsenceFilterBar extends StatelessWidget {
-  const AbsenceFilterBar({super.key});
+  const AbsenceFilterBar({
+    super.key,
+    required this.onSearch,
+    required this.onTypeChanged,
+    required this.onStatusChanged,
+  });
+
+  final ValueChanged<String> onSearch;
+  final ValueChanged<AbsenceType?> onTypeChanged;
+  final ValueChanged<AbsenceStatus?> onStatusChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -13,14 +22,20 @@ class AbsenceFilterBar extends StatelessWidget {
       runSpacing: AppSizes.space,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: <Widget>[
-        const SizedBox(width: 280, child: _EmployeeSearchField()),
+        SizedBox(
+          width: 280,
+          child: _EmployeeSearchField(onSearchChanged: onSearch),
+        ),
         SizedBox(
           width: 180,
-          child: _AbsenceTypeDropdown(value: null, onChanged: (_) {}),
+          child: _AbsenceTypeDropdown(value: null, onChanged: onTypeChanged),
         ),
         SizedBox(
           width: 200,
-          child: _AbsenceStatusDropdown(value: null, onChanged: (_) {}),
+          child: _AbsenceStatusDropdown(
+            value: null,
+            onChanged: onStatusChanged,
+          ),
         ),
         const SizedBox(width: 180, child: _DateField(label: 'From')),
         const SizedBox(width: 180, child: _DateField(label: 'To')),
@@ -30,12 +45,15 @@ class AbsenceFilterBar extends StatelessWidget {
 }
 
 class _EmployeeSearchField extends StatelessWidget {
-  const _EmployeeSearchField();
+  const _EmployeeSearchField({required this.onSearchChanged});
+
+  final ValueChanged<String>? onSearchChanged;
 
   @override
   Widget build(BuildContext context) {
-    return const TextField(
-      decoration: InputDecoration(
+    return TextField(
+      onChanged: onSearchChanged,
+      decoration: const InputDecoration(
         labelText: 'Search employee',
         prefixIcon: Icon(Icons.search),
         border: OutlineInputBorder(),
