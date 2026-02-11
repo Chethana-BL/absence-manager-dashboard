@@ -72,6 +72,7 @@ class _AbsenceTypeDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<AbsenceType?>(
       initialValue: value,
+      isExpanded: true,
       items: <DropdownMenuItem<AbsenceType?>>[
         const DropdownMenuItem<AbsenceType?>(
           value: null,
@@ -101,6 +102,7 @@ class _AbsenceStatusDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<AbsenceStatus?>(
       initialValue: value,
+      isExpanded: true,
       items: <DropdownMenuItem<AbsenceStatus?>>[
         const DropdownMenuItem<AbsenceStatus?>(
           value: null,

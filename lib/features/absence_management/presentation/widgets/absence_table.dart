@@ -83,20 +83,20 @@ class _TableHeader extends StatelessWidget {
             child: Text('Period', style: style),
           ),
           _Cell(
-            width: AbsenceTable._memberNoteW,
-            child: Text('Member note', style: style),
+            width: AbsenceTable._daysW,
+            child: Text('Days', style: style),
           ),
           _Cell(
-            width: AbsenceTable._admitterNoteW,
-            child: Text('Admitter note', style: style),
+            width: AbsenceTable._memberNoteW,
+            child: Text('Member note', style: style),
           ),
           _Cell(
             width: AbsenceTable._statusW,
             child: Text('Status', style: style),
           ),
           _Cell(
-            width: AbsenceTable._daysW,
-            child: Text('Days', style: style),
+            width: AbsenceTable._admitterNoteW,
+            child: Text('Admitter note', style: style),
           ),
         ],
       ),
@@ -137,20 +137,21 @@ class _TableRowItem extends StatelessWidget {
             _Cell(width: AbsenceTable._typeW, child: Text(row.type.label)),
             _Cell(width: AbsenceTable._periodW, child: Text(period)),
             _Cell(
+              width: AbsenceTable._daysW,
+              child: Text(row.daysCount.toString()),
+            ),
+            _Cell(
               width: AbsenceTable._memberNoteW,
               child: Text(row.memberNote ?? '-'),
             ),
-            _Cell(
-              width: AbsenceTable._admitterNoteW,
-              child: Text(row.admitterNote ?? '-'),
-            ),
+
             _Cell(
               width: AbsenceTable._statusW,
               child: StatusBadge(status: row.status),
             ),
             _Cell(
-              width: AbsenceTable._daysW,
-              child: Text(row.daysCount.toString()),
+              width: AbsenceTable._admitterNoteW,
+              child: Text(row.admitterNote ?? '-'),
             ),
           ],
         ),
