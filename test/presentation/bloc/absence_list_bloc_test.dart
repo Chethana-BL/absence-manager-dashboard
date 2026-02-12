@@ -231,6 +231,80 @@ void main() {
             .having((s) => s.hasError, 'hasError', true),
       ],
     );
+
+    blocTest<AbsenceListBloc, AbsenceListState>(
+      'filters by date range (inclusive)',
+      build: () => AbsenceListBloc(repository),
+      act: (bloc) async {
+        bloc.add(LoadAbsences());
+        await bloc.stream.firstWhere((s) => !s.isLoading && !s.hasError);
+
+        bloc.add(FromDateChanged(DateTime(2025, 1, 1)));
+        bloc.add(ToDateChanged(DateTime(2025, 1, 2)));
+      },
+      expect: () => <Matcher>[
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', true),
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', false),
+        isA<AbsenceListState>().having(
+          (s) => s.fromDate,
+          'fromDate',
+          DateTime(2025, 1, 1),
+        ),
+        isA<AbsenceListState>().having(
+          (s) => s.toDate,
+          'toDate',
+          DateTime(2025, 1, 2),
+        ),
+      ],
+    );
+
+    blocTest<AbsenceListBloc, AbsenceListState>(
+      'auto-adjusts toDate when fromDate is after toDate',
+      build: () => AbsenceListBloc(repository),
+      act: (bloc) async {
+        bloc.add(LoadAbsences());
+        await bloc.stream.firstWhere((s) => !s.isLoading && !s.hasError);
+
+        bloc.add(ToDateChanged(DateTime(2025, 1, 5)));
+        bloc.add(FromDateChanged(DateTime(2025, 1, 10)));
+      },
+      expect: () => <Matcher>[
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', true),
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', false),
+        isA<AbsenceListState>().having(
+          (s) => s.toDate,
+          'toDate',
+          DateTime(2025, 1, 5),
+        ),
+        isA<AbsenceListState>()
+            .having((s) => s.fromDate, 'fromDate', DateTime(2025, 1, 10))
+            .having((s) => s.toDate, 'toDate', DateTime(2025, 1, 10)),
+      ],
+    );
+
+    blocTest(
+      'auto-adjusts fromDate when toDate is before fromDate',
+      build: () => AbsenceListBloc(repository),
+      act: (bloc) async {
+        bloc.add(LoadAbsences());
+        await bloc.stream.firstWhere((s) => !s.isLoading && !s.hasError);
+
+        bloc.add(FromDateChanged(DateTime(2025, 1, 12)));
+        bloc.add(ToDateChanged(DateTime(2025, 1, 5)));
+      },
+      expect: () => <Matcher>[
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', true),
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', false),
+        isA<AbsenceListState>().having(
+          (s) => s.fromDate,
+          'fromDate',
+          DateTime(2025, 1, 12),
+        ),
+        isA<AbsenceListState>()
+            .having((s) => s.fromDate, 'fromDate', DateTime(2025, 1, 5))
+            .having((s) => s.toDate, 'toDate', DateTime(2025, 1, 5)),
+      ],
+    );
   });
 }
 

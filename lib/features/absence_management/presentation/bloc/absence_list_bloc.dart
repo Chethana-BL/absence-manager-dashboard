@@ -1,7 +1,5 @@
 import 'package:absence_manager_dashboard/features/absence_management/domain/entities/absence.dart';
 import 'package:absence_manager_dashboard/features/absence_management/domain/entities/member.dart';
-import 'package:absence_manager_dashboard/features/absence_management/domain/enums/absence_status.dart';
-import 'package:absence_manager_dashboard/features/absence_management/domain/enums/absence_type.dart';
 import 'package:absence_manager_dashboard/features/absence_management/domain/repositories/absence_repository.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/bloc/absence_list_event.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/bloc/absence_list_state.dart';
@@ -9,35 +7,23 @@ import 'package:absence_manager_dashboard/features/absence_management/presentati
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
-  AbsenceListBloc(this.repository)
-    : super(
-        const AbsenceListState(
-          items: [],
-          totalCount: 0,
-          currentPage: 0,
-          totalPages: 1,
-          isLoading: true,
-        ),
-      ) {
+  AbsenceListBloc(this.repository) : super(AbsenceListState.initialLoading()) {
     on<LoadAbsences>(_onLoad);
-    on<SearchChanged>(_onFilterChanged);
-    on<TypeChanged>(_onFilterChanged);
-    on<StatusChanged>(_onFilterChanged);
-    on<NextPageRequested>(_onNextPage);
-    on<PreviousPageRequested>(_onPreviousPage);
+    on<SearchChanged>(_onFiltersChanged);
+    on<TypeChanged>(_onFiltersChanged);
+    on<StatusChanged>(_onFiltersChanged);
+    on<FromDateChanged>(_onFiltersChanged);
+    on<ToDateChanged>(_onFiltersChanged);
+    on<NextPageRequested>(_onPageChanged);
+    on<PreviousPageRequested>(_onPageChanged);
   }
 
   final AbsenceRepository repository;
 
   static const int _pageSize = 10;
 
-  List<Absence> _allAbsences = [];
-  List<Member> _members = [];
-  List<Absence> _filtered = [];
-
-  String _search = '';
-  AbsenceType? _type;
-  AbsenceStatus? _status;
+  List<Absence> _allAbsences = <Absence>[];
+  List<Member> _members = <Member>[];
 
   int _currentPage = 0;
 
@@ -46,81 +32,146 @@ class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
     Emitter<AbsenceListState> emit,
   ) async {
     // Start loading
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, hasError: false));
 
     // Fetch data
     try {
       _allAbsences = await repository.getAbsences();
       _members = await repository.getMembers();
 
-      _applyFilters(emit);
+      _currentPage = 0; // reset page to first on load
+      emit(
+        _computeState(base: state.copyWith(isLoading: false, hasError: false)),
+      );
     } catch (_) {
       emit(state.copyWith(isLoading: false, hasError: true));
     }
   }
 
-  void _onFilterChanged(
+  void _onFiltersChanged(
     AbsenceListEvent event,
     Emitter<AbsenceListState> emit,
   ) {
-    // Update filters based on event type
-    if (event is SearchChanged) _search = event.query.toLowerCase();
-    if (event is TypeChanged) _type = event.type;
-    if (event is StatusChanged) _status = event.status;
-
+    final updatedState = _reduceFilters(state, event);
     _currentPage = 0; // reset page on filter change
-    _applyFilters(emit);
+
+    emit(_computeState(base: updatedState));
   }
 
-  void _onNextPage(NextPageRequested event, Emitter<AbsenceListState> emit) {
-    // Only go to next page if it exists
-    if (_currentPage < _calculateTotalPages() - 1) {
-      _currentPage++;
-      _emitPage(emit);
+  void _onPageChanged(AbsenceListEvent event, Emitter<AbsenceListState> emit) {
+    final totalPages = state.totalPages;
+
+    if (event is NextPageRequested) {
+      if (_currentPage < totalPages - 1) _currentPage++;
+    } else if (event is PreviousPageRequested) {
+      if (_currentPage > 0) _currentPage--;
     }
+
+    emit(_computeState(base: state));
   }
 
-  void _onPreviousPage(
-    PreviousPageRequested event,
-    Emitter<AbsenceListState> emit,
+  AbsenceListState _reduceFilters(
+    AbsenceListState current,
+    AbsenceListEvent event,
   ) {
-    // Only go to previous page if it exists
-    if (_currentPage > 0) {
-      _currentPage--;
-      _emitPage(emit);
+    // Search query changed
+    if (event is SearchChanged) {
+      return current.copyWith(searchQuery: event.query);
     }
+
+    // Type changed
+    if (event is TypeChanged) {
+      if (event.type == null) {
+        return current.copyWith(setSelectedTypeToNull: true);
+      }
+      return current.copyWith(selectedType: event.type);
+    }
+
+    // Status changed
+    if (event is StatusChanged) {
+      if (event.status == null) {
+        return current.copyWith(setSelectedStatusToNull: true);
+      }
+      return current.copyWith(selectedStatus: event.status);
+    }
+
+    // Date changed
+    if (event is FromDateChanged) {
+      final from = event.date;
+      var to = current.toDate;
+
+      // If "from" is after "to", adjust "to" to be the same as "from" to maintain a valid date range.
+      if (from != null && to != null && from.isAfter(to)) {
+        to = from;
+      }
+
+      return current.copyWith(
+        fromDate: from,
+        toDate: to,
+        setFromDateToNull: from == null,
+      );
+    }
+
+    if (event is ToDateChanged) {
+      final to = event.date;
+      var from = current.fromDate;
+
+      // If "to" is before "from", adjust "from" to be the same as "to" to maintain a valid date range.
+      if (from != null && to != null && to.isBefore(from)) {
+        from = to;
+      }
+
+      return current.copyWith(
+        fromDate: from,
+        toDate: to,
+        setToDateToNull: to == null,
+      );
+    }
+
+    return current;
   }
 
-  void _applyFilters(Emitter<AbsenceListState> emit) {
-    // Create a map for quick member lookup
-    final memberByUserId = {for (final m in _members) m.userId: m};
+  AbsenceListState _computeState({required AbsenceListState base}) {
+    final memberByUserId = <int, Member>{for (final m in _members) m.userId: m};
 
-    // Apply filters
-    _filtered = _allAbsences.where((a) {
+    final q = base.searchQuery.trim().toLowerCase();
+    final from = base.fromDate;
+    final to = base.toDate;
+
+    final filtered = _allAbsences.where((a) {
       final name = memberByUserId[a.userId]?.name.toLowerCase() ?? '';
 
-      final matchSearch = _search.isEmpty || name.contains(_search);
+      final matchesSearch = q.isEmpty || name.contains(q);
+      final matchesType =
+          base.selectedType == null || a.type == base.selectedType;
+      final matchesStatus =
+          base.selectedStatus == null || a.status == base.selectedStatus;
 
-      final matchType = _type == null || a.type == _type;
+      final matchesFrom =
+          from == null || !a.startDate.isBefore(_dateOnly(from));
+      final matchesTo = to == null || !a.endDate.isAfter(_dateOnly(to));
 
-      final matchStatus = _status == null || a.status == _status;
-
-      return matchSearch && matchType && matchStatus;
+      return matchesSearch &&
+          matchesType &&
+          matchesStatus &&
+          matchesFrom &&
+          matchesTo;
     }).toList();
 
-    _emitPage(emit);
-  }
+    final totalPages = _calculateTotalPages(filtered);
 
-  void _emitPage(Emitter<AbsenceListState> emit) {
-    // Create a map for quick member lookup
-    final memberByUserId = {for (final m in _members) m.userId: m};
+    // Ensure current page is within bounds after filtering
+    if (_currentPage > totalPages - 1) {
+      _currentPage = totalPages - 1;
+    }
+    if (_currentPage < 0) _currentPage = 0;
 
+    // Calculate start and end indices for pagination
     final start = _currentPage * _pageSize;
-    final end = (start + _pageSize).clamp(0, _filtered.length);
+    final end = (start + _pageSize).clamp(0, filtered.length);
 
-    final pageItems = _filtered.sublist(start, end).map((a) {
+    final pageItems = filtered.sublist(start, end).map((a) {
       final name = memberByUserId[a.userId]?.name ?? 'Unknown';
-
       return AbsenceListItemVm(
         employeeName: name,
         type: a.type,
@@ -133,22 +184,23 @@ class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
       );
     }).toList();
 
-    emit(
-      AbsenceListState(
-        items: pageItems,
-        totalCount: _filtered.length,
-        currentPage: _currentPage,
-        totalPages: _calculateTotalPages(),
-        isLoading: false,
-      ),
+    return base.copyWith(
+      items: pageItems,
+      totalCount: filtered.length,
+      totalPages: totalPages,
+      currentPage: _currentPage,
+      isLoading: false,
+      hasError: base.hasError,
     );
   }
 
-  int _calculateTotalPages() {
+  int _calculateTotalPages(List<Absence> filtered) {
     // Calculate total pages based on filtered results and page size
-    return (_filtered.length / _pageSize)
+    return (filtered.length / _pageSize)
         .ceil()
         .clamp(1, double.infinity)
         .toInt();
   }
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 }

@@ -82,6 +82,11 @@ class AbsenceListPage extends StatelessWidget {
                                 const SizedBox(height: AppSizes.spaceLG),
 
                                 AbsenceFilterBar(
+                                  searchQuery: state.searchQuery,
+                                  selectedType: state.selectedType,
+                                  selectedStatus: state.selectedStatus,
+                                  fromDate: state.fromDate,
+                                  toDate: state.toDate,
                                   onSearch: (value) => context
                                       .read<AbsenceListBloc>()
                                       .add(SearchChanged(value)),
@@ -91,6 +96,12 @@ class AbsenceListPage extends StatelessWidget {
                                   onStatusChanged: (status) => context
                                       .read<AbsenceListBloc>()
                                       .add(StatusChanged(status)),
+                                  onFromDateChanged: (date) => context
+                                      .read<AbsenceListBloc>()
+                                      .add(FromDateChanged(date)),
+                                  onToDateChanged: (date) => context
+                                      .read<AbsenceListBloc>()
+                                      .add(ToDateChanged(date)),
                                 ),
 
                                 const SizedBox(height: AppSizes.spaceLG),

@@ -20,6 +20,16 @@ class StatusChanged extends AbsenceListEvent {
   final AbsenceStatus? status;
 }
 
+class FromDateChanged extends AbsenceListEvent {
+  FromDateChanged(this.date);
+  final DateTime? date;
+}
+
+class ToDateChanged extends AbsenceListEvent {
+  ToDateChanged(this.date);
+  final DateTime? date;
+}
+
 class NextPageRequested extends AbsenceListEvent {}
 
 class PreviousPageRequested extends AbsenceListEvent {}

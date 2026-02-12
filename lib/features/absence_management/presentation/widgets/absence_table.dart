@@ -1,4 +1,5 @@
 import 'package:absence_manager_dashboard/app/constants/app_sizes.dart';
+import 'package:absence_manager_dashboard/core/utils/date_formatters.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/view_models/absence_list_item_vm.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
@@ -111,7 +112,8 @@ class _TableRowItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final period = '${_fmt(row.startDate)} → ${_fmt(row.endDate)}';
+    final period =
+        '${DateFormatters.short.format(row.startDate)} → ${DateFormatters.short.format(row.endDate)}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.spaceSM),
@@ -157,12 +159,6 @@ class _TableRowItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _fmt(DateTime d) {
-    final m = d.month.toString().padLeft(2, '0');
-    final day = d.day.toString().padLeft(2, '0');
-    return '${d.year}-$m-$day';
   }
 }
 
