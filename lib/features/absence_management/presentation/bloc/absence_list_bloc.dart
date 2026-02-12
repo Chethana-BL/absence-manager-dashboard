@@ -166,11 +166,7 @@ class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
     }
     if (_currentPage < 0) _currentPage = 0;
 
-    // Calculate start and end indices for pagination
-    final start = _currentPage * _pageSize;
-    final end = (start + _pageSize).clamp(0, filtered.length);
-
-    final pageItems = filtered.sublist(start, end).map((a) {
+    final filteredVms = filtered.map((a) {
       final name = memberByUserId[a.userId]?.name ?? 'Unknown';
       return AbsenceListItemVm(
         employeeName: name,
@@ -184,9 +180,15 @@ class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
       );
     }).toList();
 
+    // Calculate start and end indices for pagination
+    final start = _currentPage * _pageSize;
+    final end = (start + _pageSize).clamp(0, filteredVms.length);
+    final pageItems = filteredVms.sublist(start, end);
+
     return base.copyWith(
       items: pageItems,
-      totalCount: filtered.length,
+      filteredItems: filteredVms,
+      totalCount: filteredVms.length,
       totalPages: totalPages,
       currentPage: _currentPage,
       isLoading: false,

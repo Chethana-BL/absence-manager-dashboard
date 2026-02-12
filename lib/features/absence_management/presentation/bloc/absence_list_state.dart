@@ -5,6 +5,7 @@ import 'package:absence_manager_dashboard/features/absence_management/presentati
 class AbsenceListState {
   const AbsenceListState({
     required this.items,
+    required this.filteredItems,
     required this.totalCount,
     required this.currentPage,
     required this.totalPages,
@@ -17,7 +18,9 @@ class AbsenceListState {
     this.hasError = false,
   });
 
-  final List<AbsenceListItemVm> items;
+  final List<AbsenceListItemVm> items; // current page
+  final List<AbsenceListItemVm> filteredItems; // all filtered
+
   final int totalCount;
   final int currentPage;
   final int totalPages;
@@ -33,6 +36,7 @@ class AbsenceListState {
 
   AbsenceListState copyWith({
     List<AbsenceListItemVm>? items,
+    List<AbsenceListItemVm>? filteredItems,
     int? totalCount,
     int? currentPage,
     int? totalPages,
@@ -50,6 +54,7 @@ class AbsenceListState {
   }) {
     return AbsenceListState(
       items: items ?? this.items,
+      filteredItems: filteredItems ?? this.filteredItems,
       totalCount: totalCount ?? this.totalCount,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
@@ -70,6 +75,7 @@ class AbsenceListState {
   static AbsenceListState initialLoading() {
     return const AbsenceListState(
       items: <AbsenceListItemVm>[],
+      filteredItems: <AbsenceListItemVm>[],
       totalCount: 0,
       currentPage: 0,
       totalPages: 1,

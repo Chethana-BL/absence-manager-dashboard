@@ -1,4 +1,5 @@
 import 'package:absence_manager_dashboard/app/constants/app_sizes.dart';
+import 'package:absence_manager_dashboard/core/services/ical_export/ical_export_factory.dart';
 import 'package:absence_manager_dashboard/core/widgets/primary_gradient_header.dart';
 import 'package:absence_manager_dashboard/core/widgets/section_card.dart';
 import 'package:absence_manager_dashboard/features/absence_management/data/datasources/absence_local_data_source.dart';
@@ -68,8 +69,24 @@ class AbsenceListPage extends StatelessWidget {
                                       ),
                                     ),
                                     FilledButton(
-                                      onPressed: () {
-                                        // TODO: Implement export functionality
+                                      onPressed: () async {
+                                        final service =
+                                            createICalExportService();
+                                        await service.export(
+                                          state.filteredItems,
+                                        );
+
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Absences exported to iCal',
+                                              ),
+                                            ),
+                                          );
+                                        }
                                       },
                                       child: const Text('Export iCal'),
                                     ),
