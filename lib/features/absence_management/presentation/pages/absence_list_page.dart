@@ -2,8 +2,7 @@ import 'package:absence_manager_dashboard/app/constants/app_sizes.dart';
 import 'package:absence_manager_dashboard/core/services/ical_export/ical_export_factory.dart';
 import 'package:absence_manager_dashboard/core/widgets/primary_gradient_header.dart';
 import 'package:absence_manager_dashboard/core/widgets/section_card.dart';
-import 'package:absence_manager_dashboard/features/absence_management/data/datasources/absence_local_data_source.dart';
-import 'package:absence_manager_dashboard/features/absence_management/data/repositories/absence_repository_impl.dart';
+import 'package:absence_manager_dashboard/features/absence_management/domain/repositories/absence_repository.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/bloc/absence_list_bloc.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/bloc/absence_list_event.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/bloc/absence_list_state.dart';
@@ -18,9 +17,7 @@ class AbsenceListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = const AbsenceRepositoryImpl(
-      localDataSource: AbsenceLocalDataSourceImpl(),
-    );
+    final repository = context.read<AbsenceRepository>();
 
     return BlocProvider(
       create: (_) => AbsenceListBloc(repository)..add(LoadAbsences()),
