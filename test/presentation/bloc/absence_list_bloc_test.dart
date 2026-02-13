@@ -163,6 +163,52 @@ void main() {
     );
 
     blocTest<AbsenceListBloc, AbsenceListState>(
+      'clears filters and resets list/pagination',
+      build: () => AbsenceListBloc(repository),
+      act: (bloc) async {
+        bloc.add(LoadAbsences());
+        await bloc.stream.firstWhere((s) => !s.isLoading && !s.hasError);
+
+        // Apply some filters first
+        bloc.add(SearchChanged('ali'));
+        await bloc.stream.firstWhere((s) => s.totalCount == 11);
+
+        bloc.add(TypeChanged(AbsenceType.vacation));
+        await bloc.stream.firstWhere((s) => s.totalCount == 11);
+
+        // Now clear filters
+        bloc.add(ClearFiltersRequested());
+      },
+      expect: () => <Matcher>[
+        // initial load
+        isA<AbsenceListState>().having((s) => s.isLoading, 'isLoading', true),
+        isA<AbsenceListState>()
+            .having((s) => s.isLoading, 'isLoading', false)
+            .having((s) => s.hasError, 'hasError', false)
+            .having((s) => s.totalCount, 'totalCount', 21),
+
+        // after SearchChanged('ali')
+        isA<AbsenceListState>()
+            .having((s) => s.searchQuery, 'searchQuery', 'ali')
+            .having((s) => s.totalCount, 'totalCount', 11),
+
+        // after TypeChanged(vacation) - still 11 for Alice in your fixture
+        isA<AbsenceListState>().having((s) => s.totalCount, 'totalCount', 11),
+
+        // after ClearFiltersRequested() - should reset all filters and pagination
+        isA<AbsenceListState>()
+            .having((s) => s.searchQuery, 'searchQuery', '')
+            .having((s) => s.selectedType, 'selectedType', null)
+            .having((s) => s.selectedStatus, 'selectedStatus', null)
+            .having((s) => s.fromDate, 'fromDate', null)
+            .having((s) => s.toDate, 'toDate', null)
+            .having((s) => s.currentPage, 'currentPage', 0)
+            .having((s) => s.totalCount, 'totalCount', 21)
+            .having((s) => s.items.length, 'items.length', 10),
+      ],
+    );
+
+    blocTest<AbsenceListBloc, AbsenceListState>(
       'paginates next and previous pages',
       build: () => AbsenceListBloc(repository),
       act: (bloc) async {

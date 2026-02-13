@@ -14,6 +14,7 @@ class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
     on<StatusChanged>(_onFiltersChanged);
     on<FromDateChanged>(_onFiltersChanged);
     on<ToDateChanged>(_onFiltersChanged);
+    on<ClearFiltersRequested>(_onFiltersChanged);
     on<NextPageRequested>(_onPageChanged);
     on<PreviousPageRequested>(_onPageChanged);
   }
@@ -93,6 +94,18 @@ class AbsenceListBloc extends Bloc<AbsenceListEvent, AbsenceListState> {
         return current.copyWith(setSelectedStatusToNull: true);
       }
       return current.copyWith(selectedStatus: event.status);
+    }
+
+    // Clear all filters
+    if (event is ClearFiltersRequested) {
+      return current.copyWith(
+        searchQuery: '',
+        setSelectedTypeToNull: true,
+        setSelectedStatusToNull: true,
+        setFromDateToNull: true,
+        setToDateToNull: true,
+        hasError: false,
+      );
     }
 
     // Date changed

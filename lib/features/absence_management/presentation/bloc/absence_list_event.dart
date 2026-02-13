@@ -33,3 +33,5 @@ class ToDateChanged extends AbsenceListEvent {
 class NextPageRequested extends AbsenceListEvent {}
 
 class PreviousPageRequested extends AbsenceListEvent {}
+
+class ClearFiltersRequested extends AbsenceListEvent {}

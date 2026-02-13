@@ -40,10 +40,7 @@ class AbsenceFilterBar extends StatelessWidget {
       children: <Widget>[
         SizedBox(
           width: 240,
-          child: _EmployeeSearchField(
-            initialValue: searchQuery,
-            onChanged: onSearch,
-          ),
+          child: _EmployeeSearchField(value: searchQuery, onChanged: onSearch),
         ),
         SizedBox(
           width: 180,
@@ -98,20 +95,50 @@ class AbsenceFilterBar extends StatelessWidget {
   }
 }
 
-class _EmployeeSearchField extends StatelessWidget {
-  const _EmployeeSearchField({
-    required this.initialValue,
-    required this.onChanged,
-  });
+class _EmployeeSearchField extends StatefulWidget {
+  const _EmployeeSearchField({required this.value, required this.onChanged});
 
-  final String initialValue;
+  final String value;
   final ValueChanged<String> onChanged;
+
+  @override
+  State<_EmployeeSearchField> createState() => _EmployeeSearchFieldState();
+}
+
+class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(covariant _EmployeeSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If the external value changes (e.g. due to Clear Filters), update the text field
+    if (oldWidget.value != widget.value && _controller.text != widget.value) {
+      _controller.value = _controller.value.copyWith(
+        text: widget.value,
+        selection: TextSelection.collapsed(offset: widget.value.length),
+        composing: TextRange.empty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      initialValue: initialValue,
-      onChanged: onChanged,
+      controller: _controller,
+      onChanged: widget.onChanged,
       decoration: const InputDecoration(
         labelText: 'Search employee',
         prefixIcon: Icon(Icons.search),

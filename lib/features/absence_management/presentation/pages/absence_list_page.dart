@@ -8,6 +8,7 @@ import 'package:absence_manager_dashboard/features/absence_management/presentati
 import 'package:absence_manager_dashboard/features/absence_management/presentation/bloc/absence_list_state.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/absence_filter_bar.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/absence_table.dart';
+import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/empty_absences_view.dart';
 import 'package:absence_manager_dashboard/features/absence_management/presentation/widgets/pagination_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,8 +48,20 @@ class AbsenceListPage extends StatelessWidget {
                             }
 
                             if (state.hasError) {
-                              return const Center(
-                                child: Text('Failed to load data'),
+                              return Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Failed to load data'),
+                                    const SizedBox(height: AppSizes.space),
+                                    FilledButton(
+                                      onPressed: () => context
+                                          .read<AbsenceListBloc>()
+                                          .add(LoadAbsences()),
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                ),
                               );
                             }
 
@@ -65,26 +78,29 @@ class AbsenceListPage extends StatelessWidget {
                                         ).textTheme.titleMedium,
                                       ),
                                     ),
+                                    // Export button is disabled if there are no items to export
                                     FilledButton(
-                                      onPressed: () async {
-                                        final service =
-                                            createICalExportService();
-                                        await service.export(
-                                          state.filteredItems,
-                                        );
+                                      onPressed: state.filteredItems.isEmpty
+                                          ? null
+                                          : () async {
+                                              final service =
+                                                  createICalExportService();
+                                              await service.export(
+                                                state.filteredItems,
+                                              );
 
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Absences exported to iCal',
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Absences exported to iCal',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
                                       child: const Text('Export iCal'),
                                     ),
                                   ],
@@ -120,20 +136,31 @@ class AbsenceListPage extends StatelessWidget {
 
                                 const SizedBox(height: AppSizes.spaceLG),
 
-                                AbsenceTable(rows: state.items),
+                                // Show empty state if no items match the filters, otherwise show the table and pagination
+                                if (state.filteredItems.isEmpty) ...[
+                                  EmptyAbsencesView(
+                                    onClearFilters: () {
+                                      context.read<AbsenceListBloc>().add(
+                                        ClearFiltersRequested(),
+                                      );
+                                    },
+                                  ),
+                                ] else ...[
+                                  AbsenceTable(rows: state.items),
 
-                                const SizedBox(height: AppSizes.spaceLG),
+                                  const SizedBox(height: AppSizes.spaceLG),
 
-                                PaginationBar(
-                                  currentPage: state.currentPage,
-                                  totalPages: state.totalPages,
-                                  onNext: () => context
-                                      .read<AbsenceListBloc>()
-                                      .add(NextPageRequested()),
-                                  onPrevious: () => context
-                                      .read<AbsenceListBloc>()
-                                      .add(PreviousPageRequested()),
-                                ),
+                                  PaginationBar(
+                                    currentPage: state.currentPage,
+                                    totalPages: state.totalPages,
+                                    onNext: () => context
+                                        .read<AbsenceListBloc>()
+                                        .add(NextPageRequested()),
+                                    onPrevious: () => context
+                                        .read<AbsenceListBloc>()
+                                        .add(PreviousPageRequested()),
+                                  ),
+                                ],
                               ],
                             );
                           },
