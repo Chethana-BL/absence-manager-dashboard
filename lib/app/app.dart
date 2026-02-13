@@ -12,8 +12,9 @@ class AbsenceManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider<AbsenceRepository>(
-      create: (_) => AbsenceRepositoryProvider.create(DataSourceType.remote),
-
+      create: (_) => AbsenceRepositoryProvider.create(
+        DataSourceType.local,
+      ), // Switch here between mock (local) and API (remote) datasource.
       child: MaterialApp.router(
         title: 'Absence Manager',
         debugShowCheckedModeBanner: false,
