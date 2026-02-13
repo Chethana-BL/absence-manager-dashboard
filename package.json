@@ -1,0 +1,10 @@
+{
+  "name": "absence-manager-dashboard-mock-api",
+  "private": true,
+  "devDependencies": {
+    "json-server": "^0.17.4"
+  },
+  "scripts": {
+    "mock-api": "json-server --watch mock_api/db.json --port 3001"
+  }
+}
